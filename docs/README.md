@@ -2,9 +2,20 @@
 
 # Sync Multiple Google Calendars Together
 
-When you want to sync multiple Google Calendars together. Currently Google Calendar doesn't have this option and [IFTTT]/[Zapier] don't allow an easy way to do this.
+Are you one person with two (or more!) calendars that
+- Get meeting invites
+- Have separate audiences (most people can only see one calendar)
+- Block your time (you can't be at two 1pm meetings)
 
-This is useful for client + internal calendars
+Then you might like this script! It creates time blocks on calendars to ensure everyone knows when
+you've already got events scheduled.
+
+# Concepts
+
+Throughout this doc I use two terms a lot:
+
+Primary Event - A real event on a calendar
+Merged Event - A placeholder on a calendar representing a Primary Event on another calendar 
 
 # Requirements
 
@@ -13,6 +24,11 @@ This is useful for client + internal calendars
   - The account needs to have "Make changes to events" to all calendars; some clients may disable
     this access to external accounts - in this case you'll need to setup the script on the client
     account and allow access to it to the R&P calendar
+- If you're already manually duplicating events between calendars, you'll need to do one of the
+  following or MergeCalendarsTogether will treat the duplicates as Primary events
+  * Delete the duplicates
+  * Rename the duplicates with the Prefix to allow MergeCalendarsTogether to manage those events as
+    Merged events
 
 ## Getting Starting
 
