@@ -54,6 +54,47 @@ This is useful for client + internal calendars
 - Google App Scripts has a daily quote of 5k events created per day. See [Quotas for Google Services]
 - Be sure to turn off "notifications".
 
+
+## What does this actually do?
+
+Since you're granting this script/app full control over two calendars, I thought important to
+include a bit about what it actually does.
+
+The entire script operates in three parts: 1) Get all events for all calendars for all days in the
+range you specify, 2) Separate the events into either Primary (Created outside of the script) or
+Merged (created inside the script), 3) Generate API calls to create/delete merged events. There is
+one optional step as well - Debug. Let's take a look at each step:
+
+### Get all events
+This script only runs from one account, but pulls events from all of the accounts you list at the
+top. It does this via API calls using the credentials of the account running the script. That's why
+you need to share the calendars.
+
+### Separate events into Primary and Merged
+The script calls for all of the events, then checks the `summary` - if the summary starts with the
+pre-defined prefix (`🔄 ` by default), it flags it as a "Merged" event it created in a previous run,
+otherwise it's flagged as a Primary event.
+
+**This script never modifies Primary events** - if the event doesn't start with the prefix, no
+changes will be made to it.
+
+### Generate API calls
+Once all events are categorized, the script loops through each calendar's Primary events and checks
+every other calendar for a matching Merged event. If it doesn't find one, it generates an API call
+to create one.
+> Note: This also means that you can't manually delete "Merged" events; the script will just
+> re-create it when it sees that it is missing if the matching Primary event still exists.
+
+Then it loops through every calendar's Merged events and checks every other calendar for a matching
+Primary event. If no other calendar has a matching primary event, it generates an API call to delete
+the "orphaned" merged event.
+
+### Debug mode
+Once all the API calls are generated, it does one last check. If `DEBUG_ONLY` is still set to
+`true`, then instead of actually executing the API calls, it lists them in the `Execution Log` and
+exits. This is a safety measure; once you see only expected calls listed, change `DEBUG_ONLY` to
+`false` to start generating/managing Merged events.
+
 ## Icon Attributions
 
 [event favorite], [event unknown], [event user], and [event warning] by arjuazka from the Noun Project
