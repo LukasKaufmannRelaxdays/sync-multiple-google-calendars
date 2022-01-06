@@ -14,8 +14,8 @@ you've already got events scheduled.
 
 Throughout this doc I use two terms a lot:
 
-Primary Event - A real event on a calendar
-Merged Event - A placeholder on a calendar representing a Primary Event on another calendar 
+**Primary Event** - A real event on a calendar  
+**Merged Event** - A placeholder on a calendar representing a Primary Event on another calendar 
 
 # Requirements
 
