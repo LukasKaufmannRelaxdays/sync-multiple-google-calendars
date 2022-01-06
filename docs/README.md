@@ -25,9 +25,9 @@ Throughout this doc I use two terms a lot:
     this access to external accounts - in this case you'll need to setup the script on the client
     account and allow access to it to the R&P calendar
 - If you're already manually duplicating events between calendars, you'll need to do one of the
-  following or MergeCalendarsTogether will treat the duplicates as Primary events
+  following or `MergeCalendarsTogether` will treat the duplicates as Primary events
   * Delete the duplicates
-  * Rename the duplicates with the Prefix to allow MergeCalendarsTogether to manage those events as
+  * Rename the duplicates with the Prefix to allow `MergeCalendarsTogether` to manage those events as  
     Merged events
 
 ## Getting Starting
