@@ -128,6 +128,10 @@ function MergeCalendars (calendars) {
               requestBody: {
                 summary: GetMergeSummary(originEvent),
                 location: originEvent.location,
+                reminders: {
+                  useDefault: false,
+                  overrides: [], // No reminders
+                },
                 description: originEvent.description,
                 start: originEvent.start,
                 end: originEvent.end,
