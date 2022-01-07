@@ -91,7 +91,11 @@ function RetrieveCalendars(startTime, endTime) {
 
       if (!set[realStart]) {
         set[realStart] = [];
+      } else if (set[realStart].some(e => e.summary === event.summary)) {
+        // duplicate event
+        event.isDuplicate = true;
       }
+
       set[realStart].push(event);
     });
 
@@ -136,7 +140,7 @@ function MergeCalendars (calendars) {
     // Also make sure that all of our merged appointments still exist in some other calendar's primary list
     DateObjectToItems(merged).forEach(mergedEvent => {
       const primaryFound = calendars.some(origin => origin.calendarId !== calendarId && CheckOrigin(origin, mergedEvent));
-      if (!primaryFound) {
+      if (!primaryFound || mergedEvent.isDuplicate) {
         let calendarRequests = payloadSets[calendarId] || [];
         calendarRequests.push({
           method: 'DELETE',
@@ -151,10 +155,7 @@ function MergeCalendars (calendars) {
   Object.keys(payloadSets).forEach(calendarId => {
     let calendarRequests = payloadSets[calendarId];
     if (calendarRequests && calendarRequests.length) {
-      if (DEBUG_ONLY) {
-        const loggable = calendarRequests.map(({method, endpoint, summary}) => ({method, endpoint, summary}))
-        console.log(JSON.stringify(loggable, null, 2));
-      } else {
+      if (!DEBUG_ONLY) {
         const result = new BatchRequest({
           batchPath: 'batch/calendar/v3',
           requests: calendarRequests,
@@ -164,10 +165,12 @@ function MergeCalendars (calendars) {
           console.log(result)
         }
 
-        console.log(`${calendarRequests.length} events modified for ${calendarId}.`);
+        console.log(`${calendarRequests.length} events modified for ${calendarId}:`);
       }
+      const loggable = calendarRequests.map(({method, endpoint, summary}) => ({method, endpoint, summary}))
+      console.log(JSON.stringify(loggable, null, 2));
     } else {
-      console.log('No events to create for ${calendarId}.');
+      console.log(`No events to modify for ${calendarId}.`);
     }
   });
 }
