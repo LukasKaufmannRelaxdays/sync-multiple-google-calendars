@@ -1,4 +1,4 @@
-<img src="logo.svg" width="100%" height="300" alt="Sync Multiple Google Calendars Together" />
+<img src="logo_merge.svg" width="100%" height="100" alt="Sync Multiple Google Calendars Together" />
 
 # Sync Multiple Google Calendars Together
 
@@ -113,8 +113,7 @@ exits. This is a safety measure; once you see only expected calls listed, change
 
 ## Icon Attributions
 
-[event favorite], [event unknown], [event user], and [event warning] by arjuazka from the Noun Project
-[Merge] by Travis Avery from the Noun Project
+[event user] by arjuazka from the Noun Project
 [Exchange Arrows] by [ImageCatalog] from the Noun Project
 
 ## License
@@ -122,18 +121,11 @@ exits. This is a safety measure; once you see only expected calls listed, change
 MIT © [Ali Karbassi]
 
 [ali karbassi]: http://karbassi.com
-[trigger-icon]: trigger.png
 [google apps scripts]: https://script.google.com/intro
 [mergecalendarstogether.gs]: ../MergeCalendarsTogether.gs
 [batchrequests.gs]: ../BatchRequests.gs
 [appsscript.json]: ../appsscript.json
 [quotas for google services]: https://developers.google.com/apps-script/guides/services/quotas
-[ifttt]: https://ifttt.com/
-[zapier]: https://zapier.com/
-[event favorite]: https://thenounproject.com/arjuazka/collection/calendar/?i=548613
-[event unknown]: https://thenounproject.com/arjuazka/collection/calendar/?i=548618
-[event warning]: https://thenounproject.com/arjuazka/collection/calendar/?i=548620
 [event user]: https://thenounproject.com/arjuazka/collection/calendar/?i=548621
 [exchange arrows]: https://thenounproject.com/icon/exchange-arrows-405829/
-[merge]: https://thenounproject.com/travisavery/collection/cursers-pointers-solid/?i=2286624
 [imagecatalog]: https://thenounproject.com/anastasyastocks/  
