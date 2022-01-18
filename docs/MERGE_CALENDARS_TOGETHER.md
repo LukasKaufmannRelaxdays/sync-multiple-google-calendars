@@ -73,7 +73,7 @@ Throughout this doc I use two terms a lot:
 
 ## What does this actually do?
 
-Since you're granting this script/app full control over two calendars, I thought important to
+Since you're granting this script/app full control over two calendars, I thought it important to
 include a bit about what it actually does.
 
 The entire script operates in three parts: 1) Get all events for all calendars for all days in the
@@ -118,7 +118,8 @@ exits. This is a safety measure; once you see only expected calls listed, change
 
 ## License
 
-MIT © [Ali Karbassi]
+Original: MIT © [Ali Karbassi]  
+Original: MIT © Flare576
 
 [ali karbassi]: http://karbassi.com
 [google apps scripts]: https://script.google.com/intro
