@@ -45,7 +45,7 @@ Throughout this doc I use two terms a lot:
      of the `Run` and `Debug` buttons
    - ⚠️ NOTE: this next step will run the script. If that makes nervous, you should
      set `DEBUG_ONLY = true` in `Code.gs`
-   - Click `Run` (see next step for troubleshootin). This will load the `Authorization required`
+   - Click `Run` (see next step for troubleshooting). This will load the `Authorization required`
      window since it's your first time running the script. Click on `Review permissions`
      and give it permission to your account.
    - ⚠️ If you get an error (like `TypeError: Cannot read property 'summary' of
