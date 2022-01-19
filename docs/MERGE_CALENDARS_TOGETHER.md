@@ -37,9 +37,20 @@ Throughout this doc I use two terms a lot:
 1. Click on "New Project".
 1. Replace everything in `Code.gs` with the contents of [MergeCalendarsTogether.gs].
 1. Update `CALENDARS_TO_MERGE`, `SYNC_DAYS_IN_PAST`, and `SYNC_DAYS_IN_FUTURE` variables. Be sure to save.
-1. Create a new script file called `BatchRequests.gs` with the contents of [BatchRequests.gs]
+1. Create a new file of type=`Script` called `BatchRequests.gs` (note: the file extension is automatically added) with the contents of [BatchRequests.gs]
 1. Click the `Project Settings` Gear icon on the left panel. Check the `Show "appsscript.json" manifest file in editor`. Go back to code editor on the left, and update its content with [appsscript.json].
-1. Click `Run`. This will load the `Authorization required` window since it's your first time running the script. Click on `Review permissions` and give it permission to your account.
+1. Open the `Code.gs` file again
+1. run the script for the first time (also acts as a manual trigger in the future):
+   - Select the `MergeCalendarsTogether` function from the dropdown to the right
+     of the `Run` and `Debug` buttons
+   - ⚠️ NOTE: this next step will run the script. If that makes nervous, you should
+     set `DEBUG_ONLY = true` in `Code.gs`
+   - Click `Run` (see next step for troubleshootin). This will load the `Authorization required`
+     window since it's your first time running the script. Click on `Review permissions`
+     and give it permission to your account.
+   - ⚠️ If you get an error (like `TypeError: Cannot read property 'summary' of
+     undefined`) in the console, check that you selected the right function to
+     execute
 1. Click on `Triggers` clock icon on the left panel to add a trigger. Click on `Add Trigger`.
 
    - You have two choices, "Time-driven" or "From calendar".
@@ -48,7 +59,7 @@ Throughout this doc I use two terms a lot:
 
      a. **Time-driven**
 
-     - "Choose which function to run": `MergeCalendarsTogether`
+     - "Choose which function to run": `MergeCalendarsTogether` (note: this isn't the default option)
      - "Choose which deployment should run": `Head`
      - "Select event source": `Time-driven`
      - "Select type of time based trigger": choose what works for you.
@@ -56,18 +67,22 @@ Throughout this doc I use two terms a lot:
 
      b. **From calendar**
 
-     - "Choose which function to run": `MergeCalendarsTogether`
+     - "Choose which function to run": `MergeCalendarsTogether` (note: this isn't the default option)
      - "Choose which deployment should run": `Head`
      - "Select event source": `From calendar`
-     - "Enter calendar details": enter one of the calendars you are merging.
+     - "Enter calendar details": Select `Calendar Updated` and enter the email of one of the calendars you are merging in the text input
      - Click "Save"
      - Repeat these steps for every calendar you're merging.
 
-10. Enjoy!
+1. Note: you *do not* need to *Deploy* the app. It will run without being deployed 🚀
+1. Set `DEBUG_ONLY = false` in `Code.gs` if you haven't already. Optionally,
+   give the script a run (see "first run" steps above) so you don't have to wait
+   for the timer/a new calendar event to do the sync
+1. Enjoy!
 
 ## Notes
 
-- Google App Scripts has a daily quote of 5k events created per day. See [Quotas for Google Services]
+- Google App Scripts has a daily quota of 5k events created per day. See [Quotas for Google Services]
 - Be sure to turn off "notifications".
 
 
