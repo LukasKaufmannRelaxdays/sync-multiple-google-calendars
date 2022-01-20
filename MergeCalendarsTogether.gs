@@ -1,5 +1,5 @@
 // Calendars to merge.
-const CALENDARS_TO_MERGE = [  
+const CALENDARS_TO_MERGE = [
   'calendar-id1@gmail.com',
   'calendar-id2@gmail.com',
 ];
@@ -11,36 +11,29 @@ const SYNC_DAYS_IN_FUTURE = 30;
 // Set this to "false" when your happy with the debug output!
 const DEBUG_ONLY = true;
 
+// Configure event summaries to ignore. These values are used with
+// RegExp.test() so when just a string literal, they act like a case-sensitive
+// "contains" check. If you want more control, use the line start (^) and/or
+// line end ($) regex symbols.
+const IGNORE_LIST_REGEXES = [
+  // 'Contains Match',
+  // '^Starts With Match',
+  // 'Ends With Match$',
+  // '^Some Exact Match$',
+  // '^Exact start.*Exact end$', // with anything in the middle
+]
+
+// should we copy event descriptions?
+const USER_INCLUDE_DESC = false;
+
 // ----------------------------------------------------------------------------
 // DO NOT TOUCH FROM HERE ON
 // ----------------------------------------------------------------------------
 
 const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
-
-function GetMergeSummary(event) {
-  return `${MERGE_PREFIX}${event.summary}`;
-}
-
-function GetRealStart(event) {
-  // Convert all date-times to UTC for comparisons
-  return new Date(event.start.dateTime).toUTCString();
-}
-
-function DateObjectToItems(dateObject) {
-  return Object.keys(dateObject).reduce((items, day) => items.concat(dateObject[day]), [])
-}
-
-function CheckOrigin(origin, mergedEvent) {
-  const realStart = GetRealStart(mergedEvent);
-  return !!origin.primary[realStart]?.some(originEvent => mergedEvent.summary === GetMergeSummary(originEvent))
-}
-
-function CheckDestination(destination, originEvent) {
-  const realStart = GetRealStart(originEvent);
-  return !!destination.merged[realStart]?.some(mergedEvent => mergedEvent.summary === GetMergeSummary(originEvent))
-}
-
+const DESC_NOT_COPIED_MSG = '(description not copied)'
+// listed as first function so it's the default to run in the web UI
 function MergeCalendarsTogether() {
   // Midnight today
   const startTime = new Date();
@@ -54,13 +47,71 @@ function MergeCalendarsTogether() {
   MergeCalendars(calendars);
 }
 
-function RetrieveCalendars(startTime, endTime) {
-  let calendars = []
-  CALENDARS_TO_MERGE.forEach(calendarId => {
-    calendarCheck = CalendarApp.getCalendarById(calendarId);
+function INCLUDE_DESC() {
+  if (typeof module === 'undefined') {
+    return USER_INCLUDE_DESC
+  }
+  return typeof module.exports.TEST_INCLUDE_DESC === 'boolean'
+    ? module.exports.TEST_INCLUDE_DESC
+    : USER_INCLUDE_DESC
+}
 
+function GetMergeSummary(event) {
+  return `${MERGE_PREFIX}${event.summary}`;
+}
+
+function IsMergeSummary(event) {
+  return (event.summary || '').startsWith(MERGE_PREFIX);
+}
+
+function GetRealStart(event) {
+  // Convert all date-times to UTC for comparisons
+  return new Date(event.start.dateTime).toUTCString();
+}
+
+function DateObjectToItems(dateObject) {
+  return Object.keys(dateObject).reduce((items, day) => items.concat(dateObject[day]), [])
+}
+
+function ExistsInOrigin(origin, mergedEvent) {
+  const realStart = GetRealStart(mergedEvent);
+  return !!origin.primary[realStart]
+    ?.some(originEvent => mergedEvent.summary === GetMergeSummary(originEvent))
+}
+
+function ExistsInDestination(destination, originEvent) {
+  const realStart = GetRealStart(originEvent);
+  return !!destination.merged[realStart]
+    ?.some(mergedEvent => {
+      return mergedEvent.summary === GetMergeSummary(originEvent) &&
+        !isDescWrong(mergedEvent) // sorry for the double negative :'(
+    })
+}
+
+function GetDesc(event) {
+  if (!INCLUDE_DESC()) {
+    return DESC_NOT_COPIED_MSG
+  }
+  return event.description
+}
+
+function isDescWrong(event) {
+  if (INCLUDE_DESC()) {
+    const shouldHaveDescButDoesNot = event.description === DESC_NOT_COPIED_MSG
+    return shouldHaveDescButDoesNot
+  }
+  const shouldNotHaveDescButDoes = event.description !== DESC_NOT_COPIED_MSG
+  return shouldNotHaveDescButDoes
+}
+
+function RetrieveCalendars(startTime, endTime) {
+  const calendars = []
+  CALENDARS_TO_MERGE.forEach(calendarId => {
+    const calendarCheck = CalendarApp.getCalendarById(calendarId);
     if (!calendarCheck) {
-      console.log(`Calendar not found: ${calendarId}. Be sure you've shared the calendar to this account AND accepted the share!`);
+      const msg = `Calendar not found: ${calendarId}. Be sure you've shared the`
+        + `calendar to this account AND accepted the share!`
+      console.log(msg)
       return;
     }
 
@@ -72,31 +123,43 @@ function RetrieveCalendars(startTime, endTime) {
       orderBy: 'startTime',
     });
 
-    // If nothing find, move to next calendar
-    if (!(events.items && events.items.length > 0)) {
+    const isNoEventsFound = !events.items?.length
+    if (isNoEventsFound) {
       return;
     }
 
-    let primary = {};
-    let merged = {};
+    const primary = {};
+    const merged = {};
 
     events.items.forEach((event) => {
       // Don't copy "free" events.
-      if (event.transparency && event.transparency === 'transparent') {
+      if (event.transparency === 'transparent') {
+        console.log(`Ignoring transparent event: ${event.summary}`)
         return;
       }
       const realStart = GetRealStart(event);
+      const theSet = IsMergeSummary(event) ? merged : primary;
+      const isPrimary = theSet === primary
+      if (isPrimary) {
+        // only check ignores for the "primary". We need them to still end up in the
+        // "merged" so they'll be cleaned up when new ignores are added.
+        for (const currRe of IGNORE_LIST_REGEXES) {
+          const isMatch = new RegExp(currRe).test(event.summary)
+          if (isMatch) {
+            console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
+            return
+          }
+        }
+      }
 
-      let set = event.summary.startsWith(MERGE_PREFIX) ? merged : primary;
-
-      if (!set[realStart]) {
-        set[realStart] = [];
-      } else if (set[realStart].some(e => e.summary === event.summary)) {
+      if (!theSet[realStart]) {
+        theSet[realStart] = [];
+      } else if (theSet[realStart].some(e => e.summary === event.summary)) {
         // duplicate event
         event.isDuplicate = true;
       }
 
-      set[realStart].push(event);
+      theSet[realStart].push(event);
     });
 
     calendars.push({
@@ -111,44 +174,50 @@ function RetrieveCalendars(startTime, endTime) {
 
 function MergeCalendars (calendars) {
   // One Calender per batch...
-  let payloadSets = {};
+  const payloadSets = {};
 
   calendars.forEach(({calendarId, primary, merged}) => {
-    // Now that we have all events for all calendars, ensure each calendar's primary events are merged to others
+    // Now that we have all events for all calendars, ensure each calendar's
+    // primary events are merged to others
     DateObjectToItems(primary).forEach(originEvent => {
       calendars
         .filter(destination => destination.calendarId !== calendarId) // Don't send to the current calendar
         .forEach(destination => {
-          let calendarRequests = payloadSets[destination.calendarId] || [];
-          if (!CheckDestination(destination, originEvent)) {
+          const calendarRequests = payloadSets[destination.calendarId] || [];
+          if (!ExistsInDestination(destination, originEvent)) {
+            const body = {
+              summary: GetMergeSummary(originEvent),
+              location: originEvent.location,
+              reminders: {
+                useDefault: false,
+                overrides: [], // No reminders
+              },
+              description: GetDesc(originEvent),
+              start: originEvent.start,
+              end: originEvent.end,
+            }
             calendarRequests.push({
               method: 'POST',
               endpoint: `${ENDPOINT_BASE}/${destination.calendarId}/events`,
-              summary: GetMergeSummary(originEvent), // Only used in debugging statements
-              requestBody: {
-                summary: GetMergeSummary(originEvent),
-                location: originEvent.location,
-                reminders: {
-                  useDefault: false,
-                  overrides: [], // No reminders
-                },
-                description: originEvent.description,
-                start: originEvent.start,
-                end: originEvent.end,
-              },
+              summary: body.summary, // Only used in debugging statements
+              requestBody: body,
             });
           }
           payloadSets[destination.calendarId] = calendarRequests;
         });
     });
-    // Also make sure that all of our merged appointments still exist in some other calendar's primary list
+    // Also make sure that all of our merged appointments still exist in some
+    // other calendar's primary list
     DateObjectToItems(merged).forEach(mergedEvent => {
-      const primaryFound = calendars.some(origin => origin.calendarId !== calendarId && CheckOrigin(origin, mergedEvent));
-      if (!primaryFound || mergedEvent.isDuplicate) {
+      const primaryFound = calendars
+        .some(origin => origin.calendarId !== calendarId &&
+            ExistsInOrigin(origin, mergedEvent));
+      if (!primaryFound || mergedEvent.isDuplicate || isDescWrong(mergedEvent)) {
         let calendarRequests = payloadSets[calendarId] || [];
         calendarRequests.push({
           method: 'DELETE',
-          endpoint: `${ENDPOINT_BASE}/${calendarId}/events/${mergedEvent.getId().replace('@google.com', '')}`,
+          endpoint: `${ENDPOINT_BASE}/${calendarId}/events/${mergedEvent.getId()
+              .replace('@google.com', '')}`,
           summary: mergedEvent.summary, // Only used in debugging statements
         });
         payloadSets[calendarId] = calendarRequests;
@@ -157,24 +226,33 @@ function MergeCalendars (calendars) {
   });
 
   Object.keys(payloadSets).forEach(calendarId => {
-    let calendarRequests = payloadSets[calendarId];
-    if (calendarRequests && calendarRequests.length) {
-      if (!DEBUG_ONLY) {
-        const result = new BatchRequest({
-          batchPath: 'batch/calendar/v3',
-          requests: calendarRequests,
-        });
-
-        if (result.getResponseCode() !== 200) {
-          console.log(result)
-        }
-
-        console.log(`${calendarRequests.length} events modified for ${calendarId}:`);
-      }
-      const loggable = calendarRequests.map(({method, endpoint, summary}) => ({method, endpoint, summary}))
-      console.log(JSON.stringify(loggable, null, 2));
-    } else {
+    const calendarRequests = payloadSets[calendarId];
+    if (!(calendarRequests || []).length) {
       console.log(`No events to modify for ${calendarId}.`);
+      return
     }
+    if (!DEBUG_ONLY) {
+      const result = new BatchRequest({
+        batchPath: 'batch/calendar/v3',
+        requests: calendarRequests,
+      });
+      if (result.getResponseCode() !== 200) {
+        console.log(result)
+      }
+      console.log(`${calendarRequests.length} events modified for ${calendarId}:`);
+    }
+    const loggable = calendarRequests
+      .map(({method, endpoint, summary}) => ({method, endpoint, summary}))
+    console.log(`Requests for ${calendarId}`, JSON.stringify(loggable, null, 2));
   });
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {
+    ExistsInOrigin,
+    ExistsInDestination,
+    MERGE_PREFIX,
+    DESC_NOT_COPIED_MSG,
+    isDescWrong,
+  }
 }
