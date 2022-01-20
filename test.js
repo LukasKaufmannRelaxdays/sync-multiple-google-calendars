@@ -26,6 +26,7 @@ it('should NOT find event in origin when it does not exist', () => {
 })
 
 it('should find event in destination when it exists', () => {
+  objectUnderTest.TEST_INCLUDE_DESC = true
   const destination = {merged: {
     [new Date(1111).toUTCString()]: [{
       summary: `${objectUnderTest.MERGE_PREFIX}Find me`,
@@ -109,6 +110,50 @@ it('should pass when desc is correctly excluded', () => {
   objectUnderTest.TEST_INCLUDE_DESC = false
   const event = { description: objectUnderTest.DESC_NOT_COPIED_MSG }
   return !objectUnderTest.isDescWrong(event)
+})
+
+it('should end up with events in primary', () => {
+  const primaryEvent = {
+    start: {dateTime: 1111},
+    summary: 'I am primary event',
+  }
+  const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
+  const primaryDateTime = calendar.primary[new Date(1111).toUTCString()]
+  return primaryDateTime.length === 1 && primaryDateTime[0].summary === primaryEvent.summary 
+})
+
+it('should end up with events in merged', () => {
+  const mergedEvent = {
+    start: {dateTime: 1111},
+    summary: `${objectUnderTest.MERGE_PREFIX}I am merged event`,
+  }
+  const calendar = objectUnderTest.SortEvents(1, {items: [mergedEvent]})
+  const mergedDateTime = calendar.merged[new Date(1111).toUTCString()]
+  return mergedDateTime.length === 1 && mergedDateTime[0].summary === mergedEvent.summary 
+})
+
+it('should filter off ignore regexes', () => {
+  const ignorable = 'TEST ignore me'
+  objectUnderTest.IGNORE_LIST_REGEXES.push(ignorable)
+  const event = {
+    start: {dateTime: 1111},
+    summary: ignorable,
+  }
+  const result = objectUnderTest.IsOnIgnoreList(event)
+  objectUnderTest.IGNORE_LIST_REGEXES.pop()
+  return result
+})
+
+it('should NOT filter off ignore regexes', () => {
+  const ignorable = 'TEST ignore me'
+  objectUnderTest.IGNORE_LIST_REGEXES.push(ignorable)
+  const event = {
+    start: {dateTime: 1111},
+    summary: '2 legit 2 quit',
+  }
+  const result = !objectUnderTest.IsOnIgnoreList(event)
+  objectUnderTest.IGNORE_LIST_REGEXES.pop()
+  return result
 })
 
 function it(msg, fn) {

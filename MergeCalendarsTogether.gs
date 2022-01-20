@@ -56,6 +56,16 @@ function INCLUDE_DESC() {
     : USER_INCLUDE_DESC
 }
 
+function IsOnIgnoreList(event) {
+  for (const currRe of IGNORE_LIST_REGEXES) {
+    const isMatch = new RegExp(currRe).test(event.summary)
+    if (isMatch) {
+      return true
+    }
+  }
+  return false
+}
+
 function GetMergeSummary(event) {
   return `${MERGE_PREFIX}${event.summary}`;
 }
@@ -104,6 +114,46 @@ function isDescWrong(event) {
   return shouldNotHaveDescButDoes
 }
 
+function SortEvents(calendarId, events) {
+    const primary = {};
+    const merged = {};
+
+    events.items.forEach((event) => {
+      // Don't copy "free" events.
+      if (event.transparency === 'transparent') {
+        console.log(`Ignoring transparent event: ${event.summary}`)
+        return;
+      }
+      const realStart = GetRealStart(event);
+
+      if (IsMergeSummary(event)) {
+        const eventDateTime = merged[realStart] || [];
+        if (eventDateTime.some(e => e.summary === event.summary)) {
+          event.isDuplicate = true;
+          console.log(`Marking "${event.summary}" as duplicate`)
+        }
+        eventDateTime.push(event)
+        merged[realStart] = eventDateTime;
+      } else {
+        // only check ignores for the "primary". We need them to still end up in the
+        // "merged" so they'll be cleaned up when new ignores are added.
+        if (IsOnIgnoreList(event)) {
+          console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
+          return
+        }
+        const eventDateTime = primary[realStart] || [];
+        eventDateTime.push(event)
+        primary[realStart] = eventDateTime;
+      }
+    });
+
+  return {
+    calendarId,
+    primary,
+    merged,
+  }
+}
+
 function RetrieveCalendars(startTime, endTime) {
   const calendars = []
   CALENDARS_TO_MERGE.forEach(calendarId => {
@@ -128,45 +178,7 @@ function RetrieveCalendars(startTime, endTime) {
       return;
     }
 
-    const primary = {};
-    const merged = {};
-
-    events.items.forEach((event) => {
-      // Don't copy "free" events.
-      if (event.transparency === 'transparent') {
-        console.log(`Ignoring transparent event: ${event.summary}`)
-        return;
-      }
-      const realStart = GetRealStart(event);
-      const theSet = IsMergeSummary(event) ? merged : primary;
-      const isPrimary = theSet === primary
-      if (isPrimary) {
-        // only check ignores for the "primary". We need them to still end up in the
-        // "merged" so they'll be cleaned up when new ignores are added.
-        for (const currRe of IGNORE_LIST_REGEXES) {
-          const isMatch = new RegExp(currRe).test(event.summary)
-          if (isMatch) {
-            console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
-            return
-          }
-        }
-      }
-
-      if (!theSet[realStart]) {
-        theSet[realStart] = [];
-      } else if (theSet[realStart].some(e => e.summary === event.summary)) {
-        // duplicate event
-        event.isDuplicate = true;
-      }
-
-      theSet[realStart].push(event);
-    });
-
-    calendars.push({
-      calendarId,
-      primary,
-      merged,
-    });
+    calendars.push(SortEvents(calendarId, events));
   });
 
   return calendars;
@@ -254,5 +266,8 @@ if (typeof module !== 'undefined') {
     MERGE_PREFIX,
     DESC_NOT_COPIED_MSG,
     isDescWrong,
+    SortEvents,
+    IGNORE_LIST_REGEXES,
+    IsOnIgnoreList,
   }
 }
