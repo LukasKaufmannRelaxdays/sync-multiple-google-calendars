@@ -2,6 +2,8 @@
 
 # Sync Multiple Google Calendars Together
 
+[Video Guide here]
+
 Are you one person with two (or more!) calendars that
 - Get meeting invites
 - Have separate audiences (most people can only see one calendar)
@@ -136,6 +138,7 @@ exits. This is a safety measure; once you see only expected calls listed, change
 Original: MIT © [Ali Karbassi]  
 Original: MIT © Flare576
 
+[video guide here]: https://youtu.be/qH2W_lex3NU
 [ali karbassi]: http://karbassi.com
 [google apps scripts]: https://script.google.com/intro
 [mergecalendarstogether.gs]: ../MergeCalendarsTogether.gs
