@@ -60,6 +60,7 @@ function IsOnIgnoreList(event) {
   for (const currRe of IGNORE_LIST_REGEXES) {
     const isMatch = new RegExp(currRe).test(event.summary)
     if (isMatch) {
+      console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
       return true
     }
   }
@@ -138,7 +139,6 @@ function SortEvents(calendarId, events) {
         // only check ignores for the "primary". We need them to still end up in the
         // "merged" so they'll be cleaned up when new ignores are added.
         if (IsOnIgnoreList(event)) {
-          console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
           return
         }
         const eventDateTime = primary[realStart] || [];
