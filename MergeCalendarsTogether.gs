@@ -11,11 +11,22 @@ const SYNC_DAYS_IN_FUTURE = 30;
 // Set this to "false" when your happy with the debug output!
 const DEBUG_ONLY = true;
 
-// Configure event summaries to ignore. These values are used with
+// Configure event summaries to ignore (don't sync). These values are used with
 // RegExp.test() so when just a string literal, they act like a case-sensitive
 // "contains" check. If you want more control, use the line start (^) and/or
 // line end ($) regex symbols.
 const IGNORE_LIST_REGEXES = [
+  // 'Contains Match',
+  // '^Starts With Match',
+  // 'Ends With Match$',
+  // '^Some Exact Match$',
+  // '^Exact start.*Exact end$', // with anything in the middle
+]
+// Configure event summaries to obfuscate (sync but with no details). These values
+// are used with RegExp.test() so when just a string literal, they act like a
+// case-sensitive "contains" check. If you want more control, use the line start
+// (^) and/or line end ($) regex symbols.
+const OBFUSCATE_LIST_REGEXES = [
   // 'Contains Match',
   // '^Starts With Match',
   // 'Ends With Match$',
@@ -33,6 +44,7 @@ const USER_INCLUDE_DESC = false;
 const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
 const DESC_NOT_COPIED_MSG = '(description not copied)'
+const SUMMARY_NOT_COPIED_MSG = '(summary not copied)'
 // listed as first function so it's the default to run in the web UI
 function MergeCalendarsTogether() {
   // Midnight today
@@ -61,6 +73,17 @@ function IsOnIgnoreList(event) {
     const isMatch = new RegExp(currRe).test(event.summary)
     if (isMatch) {
       console.log(`Ignoring event "${event.summary}" that matches regex "${currRe}"`)
+      return true
+    }
+  }
+  return false
+}
+
+function IsOnObfuscateList(event) {
+  for (const currRe of OBFUSCATE_LIST_REGEXES) {
+    const isMatch = new RegExp(currRe).test(event.summary)
+    if (isMatch) {
+      console.log(`Obfuscating event "${event.summary}" that matches regex "${currRe}"`)
       return true
     }
   }
@@ -142,7 +165,17 @@ function SortEvents(calendarId, events) {
           return
         }
         const eventDateTime = primary[realStart] || [];
-        eventDateTime.push(event)
+        const [summary, description] = (() => {
+          if (!IsOnObfuscateList(event)) {
+            return [event.summary, event.description]
+          }
+          return [SUMMARY_NOT_COPIED_MSG, DESC_NOT_COPIED_MSG]
+        })()
+        eventDateTime.push({
+          ...event,
+          summary,
+          description,
+        })
         primary[realStart] = eventDateTime;
       }
     });
@@ -269,5 +302,8 @@ if (typeof module !== 'undefined') {
     SortEvents,
     IGNORE_LIST_REGEXES,
     IsOnIgnoreList,
+    IsOnObfuscateList,
+    OBFUSCATE_LIST_REGEXES,
+    SUMMARY_NOT_COPIED_MSG,
   }
 }
