@@ -119,7 +119,7 @@ it('should end up with events in primary', () => {
   }
   const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
   const primaryDateTime = calendar.primary[new Date(1111).toUTCString()]
-  return primaryDateTime.length === 1 && primaryDateTime[0].summary === primaryEvent.summary 
+  return primaryDateTime.length === 1 && primaryDateTime[0].summary === primaryEvent.summary
 })
 
 it('should end up with events in merged', () => {
@@ -129,7 +129,24 @@ it('should end up with events in merged', () => {
   }
   const calendar = objectUnderTest.SortEvents(1, {items: [mergedEvent]})
   const mergedDateTime = calendar.merged[new Date(1111).toUTCString()]
-  return mergedDateTime.length === 1 && mergedDateTime[0].summary === mergedEvent.summary 
+  return mergedDateTime.length === 1 && mergedDateTime[0].summary === mergedEvent.summary
+})
+
+it('should obfuscate the summary and description of a matched', () => {
+  objectUnderTest.TEST_INCLUDE_DESC = true // description sync turned on should be overridden
+  const obfuscatePattern = '(S|s)ensitive'
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.push(obfuscatePattern)
+  const primaryEvent = {
+    start: {dateTime: 3333},
+    summary: 'I am a sensitive event',
+    description: 'blah blah',
+  }
+  const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
+  const primaryDateTime = calendar.primary[new Date(3333).toUTCString()]
+  const isSummaryObfuscated = primaryDateTime[0].summary === objectUnderTest.SUMMARY_NOT_COPIED_MSG
+  const isDescObfuscated = primaryDateTime[0].description === objectUnderTest.DESC_NOT_COPIED_MSG
+  return primaryDateTime.length === 1 && isSummaryObfuscated && isDescObfuscated
 })
 
 it('should filter off ignore regexes', () => {
@@ -153,6 +170,30 @@ it('should NOT filter off ignore regexes', () => {
   }
   const result = !objectUnderTest.IsOnIgnoreList(event)
   objectUnderTest.IGNORE_LIST_REGEXES.pop()
+  return result
+})
+
+it('should match a summary to obfuscate', () => {
+  const obfuscatePattern = '(S|s)ensitive'
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.push(obfuscatePattern)
+  const event = {
+    start: {dateTime: 1111},
+    summary: 'Blah Sensitive foo bar',
+  }
+  const result = objectUnderTest.IsOnObfuscateList(event)
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
+  return result
+})
+
+it('should NOT match a summary to obfuscate', () => {
+  const obfuscatePattern = '(S|s)ensitive'
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.push(obfuscatePattern)
+  const event = {
+    start: {dateTime: 1111},
+    summary: 'Just a normal event',
+  }
+  const result = !objectUnderTest.IsOnObfuscateList(event)
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
   return result
 })
 
