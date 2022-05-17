@@ -3,6 +3,16 @@
 //   node --inspect-brk test.js // to debug
 const objectUnderTest = require('./MergeCalendarsTogether.gs')
 
+const real_console = console
+function mockConsole () {
+  const fake_console = fakeConsoleGen()
+  console = fake_console
+}
+function unMockConsole () {
+  console = real_console
+}
+
+
 it('should find event in origin when it exists', () => {
   const origin = {primary: {
     [new Date(1111).toUTCString()]: [{ summary: 'Find me' }]
@@ -25,6 +35,21 @@ it('should NOT find event in origin when it does not exist', () => {
   return !objectUnderTest.ExistsInOrigin(origin, mergedEvent)
 })
 
+it('should NOT find event in origin when location is obscured', () => {
+  const origin = {primary: {
+    [new Date(1111).toUTCString()]: [{
+      summary: 'I changed to obscured',
+      location: objectUnderTest.LOC_NOT_COPIED_MSG,
+    }]
+  }}
+  const mergedEvent = {
+    start: {dateTime: 1111},
+    summary: `${objectUnderTest.MERGE_PREFIX}I changed to obscured`,
+    location: 'the real location',
+  }
+  return !objectUnderTest.ExistsInOrigin(origin, mergedEvent)
+})
+
 it('should find event in destination when it exists', () => {
   objectUnderTest.TEST_INCLUDE_DESC = true
   const destination = {merged: {
@@ -41,7 +66,7 @@ it('should find event in destination when it exists', () => {
   return objectUnderTest.ExistsInDestination(destination, originEvent)
 })
 
-it('should NOT find event in origin when summary does not match', () => {
+it('should NOT find event in destination when summary does not match', () => {
   const destination = {merged: {
     [new Date(1111).toUTCString()]: [{
       summary: `${objectUnderTest.MERGE_PREFIX}Do not find me`,
@@ -56,7 +81,7 @@ it('should NOT find event in origin when summary does not match', () => {
   return !objectUnderTest.ExistsInDestination(destination, originEvent)
 })
 
-it('should NOT find event in origin when description does not match; not obscured', () => {
+it('should NOT find event in destination when description does not match; not obscured', () => {
   objectUnderTest.TEST_INCLUDE_DESC = true
   const destination = {merged: {
     [new Date(1111).toUTCString()]: [{
@@ -72,7 +97,7 @@ it('should NOT find event in origin when description does not match; not obscure
   return !objectUnderTest.ExistsInDestination(destination, originEvent)
 })
 
-it('should NOT find event in origin when description does not match; is obscured', () => {
+it('should NOT find event in destination when description does not match; is obscured', () => {
   objectUnderTest.TEST_INCLUDE_DESC = false
   const destination = {merged: {
     [new Date(1111).toUTCString()]: [{
@@ -84,6 +109,24 @@ it('should NOT find event in origin when description does not match; is obscured
     start: {dateTime: 1111},
     summary: 'Matches',
     description: 'one'
+  }
+  return !objectUnderTest.ExistsInDestination(destination, originEvent)
+})
+
+it('should NOT find event in destination when location does not match; is obscured', () => {
+  objectUnderTest.TEST_INCLUDE_DESC = false
+  const destination = {merged: {
+    [new Date(1111).toUTCString()]: [{
+      summary: `${objectUnderTest.MERGE_PREFIX}Matches`,
+      description: objectUnderTest.DESC_NOT_COPIED_MSG,
+      location: objectUnderTest.LOC_NOT_COPIED_MSG,
+    }]
+  }}
+  const originEvent = {
+    start: {dateTime: 1111},
+    summary: 'Matches',
+    description: objectUnderTest.DESC_NOT_COPIED_MSG,
+    location: 'the real location',
   }
   return !objectUnderTest.ExistsInDestination(destination, originEvent)
 })
@@ -132,7 +175,7 @@ it('should end up with events in merged', () => {
   return mergedDateTime.length === 1 && mergedDateTime[0].summary === mergedEvent.summary
 })
 
-it('should obfuscate the summary and description of a matched', () => {
+it('should obfuscate the summary, description, and location of a matched event', () => {
   objectUnderTest.TEST_INCLUDE_DESC = true // description sync turned on should be overridden
   const obfuscatePattern = '(S|s)ensitive'
   objectUnderTest.OBFUSCATE_LIST_REGEXES.push(obfuscatePattern)
@@ -140,13 +183,20 @@ it('should obfuscate the summary and description of a matched', () => {
     start: {dateTime: 3333},
     summary: 'I am a sensitive event',
     description: 'blah blah',
+    location: 'secret lair',
   }
+  mockConsole()
   const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
-  objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
+  const loggedOnce = console.calls.log.length === 1
   const primaryDateTime = calendar.primary[new Date(3333).toUTCString()]
   const isSummaryObfuscated = primaryDateTime[0].summary === objectUnderTest.SUMMARY_NOT_COPIED_MSG
   const isDescObfuscated = primaryDateTime[0].description === objectUnderTest.DESC_NOT_COPIED_MSG
-  return primaryDateTime.length === 1 && isSummaryObfuscated && isDescObfuscated
+  const isLocObfuscated = primaryDateTime[0].location === objectUnderTest.LOC_NOT_COPIED_MSG
+  // Clean up
+  unMockConsole()
+  objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
+
+  return primaryDateTime.length === 1 && isSummaryObfuscated && isDescObfuscated && isLocObfuscated && loggedOnce
 })
 
 it('should filter off ignore regexes', () => {
@@ -156,9 +206,14 @@ it('should filter off ignore regexes', () => {
     start: {dateTime: 1111},
     summary: ignorable,
   }
+  mockConsole()
   const result = objectUnderTest.IsOnIgnoreList(event)
+  const loggedOnce = console.calls.log.length === 1
+  // Cleanup
+  unMockConsole()
   objectUnderTest.IGNORE_LIST_REGEXES.pop()
-  return result
+
+  return result && loggedOnce
 })
 
 it('should NOT filter off ignore regexes', () => {
@@ -180,9 +235,14 @@ it('should match a summary to obfuscate', () => {
     start: {dateTime: 1111},
     summary: 'Blah Sensitive foo bar',
   }
+  mockConsole()
   const result = objectUnderTest.IsOnObfuscateList(event)
+  const loggedOnce = console.calls.log.length === 1
+  // Cleanup
+  unMockConsole()
   objectUnderTest.OBFUSCATE_LIST_REGEXES.pop()
-  return result
+
+  return result && loggedOnce
 })
 
 it('should NOT match a summary to obfuscate', () => {
@@ -208,4 +268,19 @@ function it(msg, fn) {
     console.error(`FAIL(error): ${msg}; error=${err.toString()}`)
   }
   process.exitCode = 1
+}
+
+function fakeConsoleGen () {
+  return {
+    calls: {
+      log: [],
+      error: [],
+    },
+    log: function (msg) {
+      this.calls.log.push(msg)
+    },
+    error: function (msg) {
+      this.calls.error.push(msg)
+    },
+  }
 }

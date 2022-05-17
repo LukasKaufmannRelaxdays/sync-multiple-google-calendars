@@ -45,6 +45,7 @@ const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
 const DESC_NOT_COPIED_MSG = '(description not copied)'
 const SUMMARY_NOT_COPIED_MSG = '(summary not copied)'
+const LOC_NOT_COPIED_MSG = '(location not copied)'
 // listed as first function so it's the default to run in the web UI
 function MergeCalendarsTogether() {
   // Midnight today
@@ -110,7 +111,10 @@ function DateObjectToItems(dateObject) {
 function ExistsInOrigin(origin, mergedEvent) {
   const realStart = GetRealStart(mergedEvent);
   return !!origin.primary[realStart]
-    ?.some(originEvent => mergedEvent.summary === GetMergeSummary(originEvent))
+    ?.some(originEvent => {
+      return mergedEvent.summary === GetMergeSummary(originEvent) &&
+        mergedEvent.location === originEvent.location
+    })
 }
 
 function ExistsInDestination(destination, originEvent) {
@@ -118,6 +122,7 @@ function ExistsInDestination(destination, originEvent) {
   return !!destination.merged[realStart]
     ?.some(mergedEvent => {
       return mergedEvent.summary === GetMergeSummary(originEvent) &&
+        mergedEvent.location === originEvent.location &&
         !isDescWrong(mergedEvent) // sorry for the double negative :'(
     })
 }
@@ -165,16 +170,17 @@ function SortEvents(calendarId, events) {
           return
         }
         const eventDateTime = primary[realStart] || [];
-        const [summary, description] = (() => {
+        const [summary, description, location] = (() => {
           if (!IsOnObfuscateList(event)) {
-            return [event.summary, event.description]
+            return [event.summary, event.description, event.location]
           }
-          return [SUMMARY_NOT_COPIED_MSG, DESC_NOT_COPIED_MSG]
+          return [SUMMARY_NOT_COPIED_MSG, DESC_NOT_COPIED_MSG, LOC_NOT_COPIED_MSG]
         })()
         eventDateTime.push({
           ...event,
           summary,
           description,
+          location,
         })
         primary[realStart] = eventDateTime;
       }
@@ -305,5 +311,6 @@ if (typeof module !== 'undefined') {
     IsOnObfuscateList,
     OBFUSCATE_LIST_REGEXES,
     SUMMARY_NOT_COPIED_MSG,
+    LOC_NOT_COPIED_MSG,
   }
 }
