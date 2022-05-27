@@ -41,7 +41,7 @@ const USER_INCLUDE_DESC = false;
 // DO NOT TOUCH FROM HERE ON
 // ----------------------------------------------------------------------------
 
-const VERSION = '0.0.9';
+const VERSION = '0.1.0';
 const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
 const DESC_NOT_COPIED_MSG = '(description not copied)'
@@ -167,11 +167,11 @@ function isDescWrong(event) {
   return shouldNotHaveDescButDoes
 }
 
-function SortEvents(calendarId, events) {
+function SortEvents(calendarId, items) {
     const primary = {};
     const merged = {};
 
-    events.items.forEach((event) => {
+    items.forEach((event) => {
       // Don't copy "free" events.
       if (event.transparency === 'transparent') {
         console.log(`Ignoring transparent event: ${event.summary}`)
@@ -229,19 +229,30 @@ function RetrieveCalendars(startTime, endTime) {
     }
 
     // Find events
-    const events = Calendar.Events.list(calendarId, {
-      timeMin: startTime.toISOString(),
-      timeMax: endTime.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
+    const items = [];
+    let nextPage;
+    do {
+      let options = {
+        timeMin: startTime.toISOString(),
+        timeMax: endTime.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
+      };
+      if (nextPage) {
+        options.pageToken = nextPage;
+      }
 
-    const isNoEventsFound = !events.items?.length
+      const result = Calendar.Events.list(calendarId, options);
+      items.push(...result.items)
+      nextPage = result.nextPageToken;
+    } while(nextPage);
+
+    const isNoEventsFound = !items.length
     if (isNoEventsFound) {
       return;
     }
 
-    calendars.push(SortEvents(calendarId, events));
+    calendars.push(SortEvents(calendarId, items));
   });
 
   return calendars;
