@@ -16,8 +16,8 @@ you've already got events scheduled.
 
 Throughout this doc I use two terms a lot:
 
-**Primary Event** - A real event on a calendar  
-**Merged Event** - A placeholder on a calendar representing a Primary Event on another calendar 
+**Primary Event** - A real event on a calendar
+**Merged Event** - A placeholder on a calendar representing a Primary Event on another calendar
 
 # Requirements
 
@@ -29,10 +29,10 @@ Throughout this doc I use two terms a lot:
 - If you're already manually duplicating events between calendars, you'll need to do one of the
   following or `MergeCalendarsTogether` will treat the duplicates as Primary events
   * Delete the duplicates
-  * Rename the duplicates with the Prefix to allow `MergeCalendarsTogether` to manage those events as  
+  * Rename the duplicates with the Prefix to allow `MergeCalendarsTogether` to manage those events as
     Merged events
 
-## Getting Starting
+## Getting Started
 
 1. Make sure every calendar you want sync is shared with the account that will run this script
 1. Log into the account that holds the shared calendar and go to the [Google Apps Scripts] website.
@@ -87,6 +87,23 @@ Throughout this doc I use two terms a lot:
 - Google App Scripts has a daily quota of 5k events created per day. See [Quotas for Google Services]
 - Be sure to turn off "notifications".
 
+## Upgrading
+When updating from one version to another, you'll need to copy the code from this repository into
+your project again. When you do this, it's best to:
+
+1. Make a backup of your current script by copy/pasting into a text document or other local file
+1. Replace everything in `Code.gs` with the contents of [MergeCalendarsTogether.gs].
+1. Copy your settings from your backup into the new code, particularly
+  - CALENDARS_TO_MERGE
+  - SYNC_DAYS_IN_PAST
+  - SYNC_DAYS_IN_FUTURE
+  - If you use any other features of the script (e.g., filtering/obfuscation/etc.), copy those
+    settings as well
+1. Double-check that "DEBUG_ONLY" is set to `true`
+1. Save
+1. At the top of the screen, ensure "MergeCalendarsTogether" is selected, and press "Run"
+1. Verify everything runs correctly
+1. Change "DEBUG_ONLY" to `false` to re-enable the script
 
 ## What does this actually do?
 
@@ -128,6 +145,21 @@ Once all the API calls are generated, it does one last check. If `DEBUG_ONLY` is
 exits. This is a safety measure; once you see only expected calls listed, change `DEBUG_ONLY` to
 `false` to start generating/managing Merged events.
 
+## Uninstalling/Removing Merged events
+In the event that you need to remove the merged events, follow these steps:
+
+1. Go to https://script.google.com/home
+1. Open the project
+1. Open Triggers tab
+1. Delete all triggers
+1. Open "Editor" tab
+1. Ensure you have at least version 0.0.9 (See [Upgrading](#upgrading))
+1. Choose "DeleteAllMerged" from the dropdown list next to the Run/Debug buttons
+1. Click Run
+
+To restore functionality, simply follow the steps from [Getting Started](#getting-started) for
+setting up the triggers again (Step #10)
+
 ## Icon Attributions
 
 [event user] by arjuazka from the Noun Project
@@ -135,7 +167,7 @@ exits. This is a safety measure; once you see only expected calls listed, change
 
 ## License
 
-Original: MIT © [Ali Karbassi]  
+Original: MIT © [Ali Karbassi]
 Original: MIT © Flare576
 
 [video guide here]: https://youtu.be/qH2W_lex3NU
@@ -147,4 +179,4 @@ Original: MIT © Flare576
 [quotas for google services]: https://developers.google.com/apps-script/guides/services/quotas
 [event user]: https://thenounproject.com/arjuazka/collection/calendar/?i=548621
 [exchange arrows]: https://thenounproject.com/icon/exchange-arrows-405829/
-[imagecatalog]: https://thenounproject.com/anastasyastocks/  
+[imagecatalog]: https://thenounproject.com/anastasyastocks/
