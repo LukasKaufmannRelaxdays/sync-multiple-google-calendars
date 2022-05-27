@@ -41,6 +41,7 @@ const USER_INCLUDE_DESC = false;
 // DO NOT TOUCH FROM HERE ON
 // ----------------------------------------------------------------------------
 
+const VERSION = '0.0.9';
 const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
 const DESC_NOT_COPIED_MSG = '(description not copied)'
@@ -48,16 +49,39 @@ const SUMMARY_NOT_COPIED_MSG = '(summary not copied)'
 const LOC_NOT_COPIED_MSG = '(location not copied)'
 // listed as first function so it's the default to run in the web UI
 function MergeCalendarsTogether() {
-  // Midnight today
-  const startTime = new Date();
-  startTime.setHours(0, 0, 0, 0);
-  startTime.setDate(startTime.getDate() - SYNC_DAYS_IN_PAST);
-
-  const endTime = new Date(startTime.valueOf());
-  endTime.setDate(endTime.getDate() + SYNC_DAYS_IN_FUTURE);
-
-  const calendars = RetrieveCalendars(startTime, endTime);
+  const dates = GetStartEndDates();
+  const calendars = RetrieveCalendars(dates[0], dates[1]);
   MergeCalendars(calendars);
+}
+
+function DeleteAllMerged () {
+  const dates = GetStartEndDates();
+  const calendars = RetrieveCalendars(dates[0], dates[1]);
+
+  // Easiest way to clear out all merged events is to ensure there's no matching Primary events
+  calendars.forEach(calendar => {
+    calendar.primary = [];
+  });
+  MergeCalendars(calendars);
+}
+
+function GetStartEndDates () {
+  const SDIP = typeof module !== 'undefined' && typeof module.exports.TEST_SYNC_DAYS_IN_PAST === 'number'
+    ? module.exports.TEST_SYNC_DAYS_IN_PAST
+    : SYNC_DAYS_IN_PAST
+  const SDIF = typeof module !== 'undefined' && typeof module.exports.TEST_SYNC_DAYS_IN_FUTURE === 'number'
+    ? module.exports.TEST_SYNC_DAYS_IN_FUTURE
+    : SYNC_DAYS_IN_FUTURE
+
+  // Midnight today
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+  startDate.setDate(startDate.getDate() - SDIP);
+
+  const endDate = new Date();
+  endDate.setHours(0, 0, 0, 0);
+  endDate.setDate(endDate.getDate() + SDIF);
+  return [startDate, endDate];
 }
 
 function INCLUDE_DESC() {
@@ -300,6 +324,7 @@ function MergeCalendars (calendars) {
 
 if (typeof module !== 'undefined') {
   module.exports = {
+    GetStartEndDates,
     ExistsInOrigin,
     ExistsInDestination,
     MERGE_PREFIX,
@@ -312,5 +337,7 @@ if (typeof module !== 'undefined') {
     OBFUSCATE_LIST_REGEXES,
     SUMMARY_NOT_COPIED_MSG,
     LOC_NOT_COPIED_MSG,
+    SYNC_DAYS_IN_PAST,
+    SYNC_DAYS_IN_FUTURE,
   }
 }

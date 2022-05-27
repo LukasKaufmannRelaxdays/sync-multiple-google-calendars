@@ -12,6 +12,33 @@ function unMockConsole () {
   console = real_console
 }
 
+it('should use the right date range', () => {
+  const rightStart = new Date()
+  const rightEnd = new Date()
+  rightStart.setHours(0, 0, 0, 0);
+  rightEnd.setHours(0, 0, 0, 0);
+  rightStart.setDate(rightStart.getDate() - objectUnderTest.SYNC_DAYS_IN_PAST);
+  rightEnd.setDate(rightEnd.getDate() + objectUnderTest.SYNC_DAYS_IN_FUTURE);
+
+  const dates = objectUnderTest.GetStartEndDates();
+  return dates[0].valueOf() === rightStart.valueOf() && dates[1].valueOf() === rightEnd.valueOf();
+})
+
+it('should use the right date range if modified', () => {
+  const newPast = 20
+  const newFuture = 99
+  objectUnderTest.TEST_SYNC_DAYS_IN_PAST = newPast
+  objectUnderTest.TEST_SYNC_DAYS_IN_FUTURE = newFuture
+  const rightStart = new Date()
+  const rightEnd = new Date()
+  rightStart.setHours(0, 0, 0, 0);
+  rightEnd.setHours(0, 0, 0, 0);
+  rightStart.setDate(rightStart.getDate() - newPast);
+  rightEnd.setDate(rightEnd.getDate() + newFuture);
+
+  const dates = objectUnderTest.GetStartEndDates();
+  return dates[0].valueOf() === rightStart.valueOf() && dates[1].valueOf() === rightEnd.valueOf();
+})
 
 it('should find event in origin when it exists', () => {
   const origin = {primary: {
