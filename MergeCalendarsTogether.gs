@@ -41,7 +41,7 @@ const USER_INCLUDE_DESC = false;
 // DO NOT TOUCH FROM HERE ON
 // ----------------------------------------------------------------------------
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const ENDPOINT_BASE = 'https://www.googleapis.com/calendar/v3/calendars';
 const MERGE_PREFIX = '🔄 ';
 const DESC_NOT_COPIED_MSG = '(description not copied)'
@@ -246,7 +246,7 @@ function RetrieveCalendars(startTime, endTime) {
       items.push(...result.items)
       nextPage = result.nextPageToken;
     } while(nextPage);
-
+    console.log(`Found ${items.length} items for ${calendarId}`)
     const isNoEventsFound = !items.length
     if (isNoEventsFound) {
       return;
@@ -257,6 +257,7 @@ function RetrieveCalendars(startTime, endTime) {
 
   return calendars;
 }
+
 
 function MergeCalendars (calendars) {
   // One Calender per batch...
@@ -326,6 +327,8 @@ function MergeCalendars (calendars) {
         console.log(result)
       }
       console.log(`${calendarRequests.length} events modified for ${calendarId}:`);
+    } else {
+      console.log(`DEBUG: ${calendarRequests.length} events would have been modified for ${calendarId}:`);
     }
     const loggable = calendarRequests
       .map(({method, endpoint, summary}) => ({method, endpoint, summary}))
