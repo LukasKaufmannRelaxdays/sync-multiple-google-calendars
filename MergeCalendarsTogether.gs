@@ -322,7 +322,7 @@ function MergeCalendars (calendars) {
         batchPath: 'batch/calendar/v3',
         requests: calendarRequests,
       });
-      if (result.getResponseCode() !== 200) {
+      if (!result.getResponseCode || result.getResponseCode() !== 200) {
         console.log(result)
       }
       console.log(`${calendarRequests.length} events modified for ${calendarId}:`);
