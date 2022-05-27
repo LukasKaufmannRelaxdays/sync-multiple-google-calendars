@@ -187,7 +187,7 @@ it('should end up with events in primary', () => {
     start: {dateTime: 1111},
     summary: 'I am primary event',
   }
-  const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
+  const calendar = objectUnderTest.SortEvents(1, [primaryEvent])
   const primaryDateTime = calendar.primary[new Date(1111).toUTCString()]
   return primaryDateTime.length === 1 && primaryDateTime[0].summary === primaryEvent.summary
 })
@@ -197,7 +197,7 @@ it('should end up with events in merged', () => {
     start: {dateTime: 1111},
     summary: `${objectUnderTest.MERGE_PREFIX}I am merged event`,
   }
-  const calendar = objectUnderTest.SortEvents(1, {items: [mergedEvent]})
+  const calendar = objectUnderTest.SortEvents(1, [mergedEvent])
   const mergedDateTime = calendar.merged[new Date(1111).toUTCString()]
   return mergedDateTime.length === 1 && mergedDateTime[0].summary === mergedEvent.summary
 })
@@ -213,7 +213,7 @@ it('should obfuscate the summary, description, and location of a matched event',
     location: 'secret lair',
   }
   mockConsole()
-  const calendar = objectUnderTest.SortEvents(1, {items: [primaryEvent]})
+  const calendar = objectUnderTest.SortEvents(1, [primaryEvent])
   const loggedOnce = console.calls.log.length === 1
   const primaryDateTime = calendar.primary[new Date(3333).toUTCString()]
   const isSummaryObfuscated = primaryDateTime[0].summary === objectUnderTest.SUMMARY_NOT_COPIED_MSG
