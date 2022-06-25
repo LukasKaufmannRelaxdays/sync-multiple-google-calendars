@@ -132,12 +132,17 @@ function DateObjectToItems(dateObject) {
   return Object.keys(dateObject).reduce((items, day) => items.concat(dateObject[day]), [])
 }
 
+function IsMergedEvent(mergedEvent, originEvent) {
+  return mergedEvent.summary === GetMergeSummary(originEvent) &&
+    mergedEvent.transparency === originEvent.transparency &&
+    mergedEvent.location === originEvent.location;
+}
+
 function ExistsInOrigin(origin, mergedEvent) {
   const realStart = GetRealStart(mergedEvent);
   return !!origin.primary[realStart]
     ?.some(originEvent => {
-      return mergedEvent.summary === GetMergeSummary(originEvent) &&
-        mergedEvent.location === originEvent.location
+      return IsMergedEvent(mergedEvent, originEvent)
     })
 }
 
@@ -145,8 +150,7 @@ function ExistsInDestination(destination, originEvent) {
   const realStart = GetRealStart(originEvent);
   return !!destination.merged[realStart]
     ?.some(mergedEvent => {
-      return mergedEvent.summary === GetMergeSummary(originEvent) &&
-        mergedEvent.location === originEvent.location &&
+      return IsMergedEvent(mergedEvent, originEvent) &&
         !isDescWrong(mergedEvent) // sorry for the double negative :'(
     })
 }
@@ -172,11 +176,6 @@ function SortEvents(calendarId, items) {
     const merged = {};
 
     items.forEach((event) => {
-      // Don't copy "free" events.
-      if (event.transparency === 'transparent') {
-        console.log(`Ignoring transparent event: ${event.summary}`)
-        return;
-      }
       const realStart = GetRealStart(event);
 
       if (IsMergeSummary(event)) {
@@ -282,6 +281,7 @@ function MergeCalendars (calendars) {
               description: GetDesc(originEvent),
               start: originEvent.start,
               end: originEvent.end,
+              transparency: originEvent.transparency,
             }
             calendarRequests.push({
               method: 'POST',
