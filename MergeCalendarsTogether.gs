@@ -246,10 +246,6 @@ function RetrieveCalendars(startTime, endTime) {
       nextPage = result.nextPageToken;
     } while(nextPage);
     console.log(`Found ${items.length} items for ${calendarId}`)
-    const isNoEventsFound = !items.length
-    if (isNoEventsFound) {
-      return;
-    }
 
     calendars.push(SortEvents(calendarId, items));
   });
