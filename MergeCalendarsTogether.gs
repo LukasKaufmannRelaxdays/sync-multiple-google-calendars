@@ -151,7 +151,7 @@ function ExistsInDestination(destination, originEvent) {
   return !!destination.merged[realStart]
     ?.some(mergedEvent => {
       return IsMergedEvent(mergedEvent, originEvent) &&
-        !isDescWrong(mergedEvent) // sorry for the double negative :'(
+        !IsDescWrong(mergedEvent, originEvent) // sorry for the double negative :'(
     })
 }
 
@@ -162,10 +162,13 @@ function GetDesc(event) {
   return event.description
 }
 
-function isDescWrong(event) {
+function IsDescWrong(event, originEvent) {
   if (INCLUDE_DESC()) {
-    const shouldHaveDescButDoesNot = event.description === DESC_NOT_COPIED_MSG
-    return shouldHaveDescButDoesNot
+    if(originEvent){
+      return event.description !== GetDesc(originEvent)
+    }else{
+      return event.description === DESC_NOT_COPIED_MSG
+    }
   }
   const shouldNotHaveDescButDoes = event.description !== DESC_NOT_COPIED_MSG
   return shouldNotHaveDescButDoes
@@ -295,7 +298,7 @@ function MergeCalendars (calendars) {
       const primaryFound = calendars
         .some(origin => origin.calendarId !== calendarId &&
             ExistsInOrigin(origin, mergedEvent));
-      if (!primaryFound || mergedEvent.isDuplicate || isDescWrong(mergedEvent)) {
+      if (!primaryFound || mergedEvent.isDuplicate) {
         let calendarRequests = payloadSets[calendarId] || [];
         calendarRequests.push({
           method: 'DELETE',
@@ -339,7 +342,7 @@ if (typeof module !== 'undefined') {
     ExistsInDestination,
     MERGE_PREFIX,
     DESC_NOT_COPIED_MSG,
-    isDescWrong,
+    IsDescWrong,
     SortEvents,
     IGNORE_LIST_REGEXES,
     IsOnIgnoreList,
