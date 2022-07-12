@@ -186,8 +186,14 @@ function SortEvents(calendarId, items) {
 
       if (IsMergeSummary(event)) {
         const eventDateTime = merged[realStart] || [];
-        if (eventDateTime.some(e => e.summary === event.summary)) {
-          event.isDuplicate = true;
+        var possibleDuplicate = eventDateTime.filter(e => e.summary === event.summary);
+        if (possibleDuplicate.length >= 1) {
+          if(possibleDuplicate[0].updated >= event.updated){
+            event.isDuplicate = true;
+          }
+          else{
+            possibleDuplicate[0].isDuplicate = true;
+          }
           console.log(`Marking "${event.summary}" as duplicate`)
         }
         eventDateTime.push(event)
